@@ -67,7 +67,7 @@ Ejecutar launcher gráfico (Tkinter)
 El proyecto incluye un launcher sencillo en Tkinter para ejecutar scripts desde una interfaz gráfica básica, con fines didácticos.
 
 ```bash
-poetry run python -m bioomicshub.scripts.demo_run
+poetry run python src/bioomicshub/scripts/tk_launcher.py
 ```
 Este comando genera un archivo de ejemplo: bubble_example.png
 

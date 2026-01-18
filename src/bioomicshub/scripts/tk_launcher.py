@@ -5,9 +5,8 @@ BioOmicsHub - Tkinter Script Launcher (MVP)
 
 Objetivo:
 GUI sencilla en Tkinter para ejecutar scripts existentes del proyecto
-sin modificar la lógica interna.
 """
-
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -108,25 +107,56 @@ class TkLauncher(tk.Tk):
         self.clear_output()
         self.log(f"> Ejecutando {script}\n\n")
 
+        # --- Diagnóstico portable (Windows/macOS/Linux) ---
+        self.log(f"Launcher sys.executable: {sys.executable}\n")
+        self.log(f"VIRTUAL_ENV: {os.environ.get('VIRTUAL_ENV')}\n")
+        self.log(f"CONDA_PREFIX: {os.environ.get('CONDA_PREFIX')}\n")
+        self.log(f"PYTHONPATH: {os.environ.get('PYTHONPATH')}\n")
+        self.log(f"CWD: {Path.cwd()}\n")
+        self.log(f"SCRIPTS_DIR: {self.scripts_dir}\n\n")
+
+        script_path = self.scripts_dir / script
+        if not script_path.exists():
+            messagebox.showerror("Error", f"No existe el script: {script_path}")
+            return
+
         try:
-            cmd = [
-                sys.executable,
-                str(self.scripts_dir / script)
-            ]
+            # Ejecutar usando el Python del entorno actual (portable)
+            cmd = [sys.executable, str(script_path)]
+
+            # Importante: setear cwd para resultados consistentes (cross-platform)
+            # Aquí elegimos ejecutar "desde scripts_dir" para que archivos salgan ahí.
 
             process = subprocess.Popen(
                 cmd,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
-                text=True
-            )
-
+                text=True,
+                cwd=str(self.scripts_dir),
+                )
+            
             stdout, stderr = process.communicate()
 
             if stdout:
                 self.log(stdout)
+            
             if stderr:
                 self.log("\n[stderr]\n" + stderr)
+            
+
+            if process.returncode != 0:
+                self.log(f"\n[exit code] {process.returncode}\n")
+                
+                # Heurística útil para dependencias faltantes
+                if "ModuleNotFoundError" in stderr:
+                    self.log(
+                    "\n[Sugerencia]\n"
+                    "Faltan dependencias en el entorno activo.\n"
+                    "Si usas Poetry, ejecuta:\n"
+                    "  poetry install\n"
+                    "o:\n"
+                    "  poetry add <paquete>\n"
+                )
 
         except Exception as e:
             messagebox.showerror("Error", str(e))
