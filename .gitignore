@@ -26,3 +26,4 @@ data/processed/
 *.git.patch
 *.patch
 os
+.python-version
